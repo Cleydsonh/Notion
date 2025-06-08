@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de conceito Kids 1-4</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .top-warning {
+            background-color: #fff9c4; /* Light yellow */
+            color: #795548; /* Brown text */
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px dashed #fbc02d; /* Yellow border */
+            text-align: center;
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 25px;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .calculator-container {
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+            margin-bottom: 30px;
+        }
+        .calculator-container h2 {
+            color: #00796b; /* Teal accent */
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #b2dfdb; /* Light teal */
+            padding-bottom: 10px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        .input-group input[type="number"] {
+            width: calc(100% - 24px);
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        .input-group input[type="number"]:focus {
+            border-color: #00796b;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 121, 107, 0.2);
+        }
+        .calculate-button {
+            background-color: #00897b; /* Darker Teal */
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+        }
+        .calculate-button:hover {
+            background-color: #00695c;
+        }
+        .results {
+            margin-top: 25px;
+            padding: 20px;
+            background-color: #e8f5e9; /* Light green background for results */
+            border-radius: 8px;
+            border: 1px solid #c8e6c9;
+        }
+        .results p {
+            margin: 8px 0;
+            font-size: 1rem;
+            color: #2e7d32; /* Dark green text */
+        }
+        .results p strong {
+            color: #1b5e20;
+        }
+        .note-message { /* Renamed from .important-note for clarity */
+            font-weight: bold;
+            color: #d32f2f; /* Red for important notes */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-warning">
+        Independente do resultado, lembrem-se de averiguar cada prova individualmente! :)
+    </div>
+
+    <div class="calculator-container">
+        <h2>KIDS 1 A 4 - Test Challenge</h2>
+        <div class="input-group">
+            <label for="challengeScore">Insira a Pontuação do Aluno:</label>
+            <input type="number" id="challengeScore" placeholder="Ex: 35">
+        </div>
+        <button class="calculate-button" onclick="calculateGrade('challenge')">Calcular Conceito</button>
+        <div id="challengeResults" class="results" style="display:none;">
+            <p><strong>Pontuação Inserida:</strong> <span id="challengeInputScore"></span></p>
+            <p><strong>Percentual:</strong> <span id="challengePercentage"></span>%</p>
+            <p><strong>Conceito Numérico (0-10):</strong> <span id="challengeNumericGrade"></span></p>
+            <p><strong>Conceito Final:</strong> <span id="challengeFinalGrade"></span></p>
+            <p class="note-message" id="challengeNote" style="display:none;"></p>
+        </div>
+    </div>
+
+    <div class="calculator-container">
+        <h2>KIDS 1 A 4 - Test Standard</h2>
+        <div class="input-group">
+            <label for="standardScore">Insira a Pontuação do Aluno:</label>
+            <input type="number" id="standardScore" placeholder="Ex: 20">
+        </div>
+        <button class="calculate-button" onclick="calculateGrade('standard')">Calcular Conceito</button>
+        <div id="standardResults" class="results" style="display:none;">
+            <p><strong>Pontuação Inserida:</strong> <span id="standardInputScore"></span></p>
+            <p><strong>Percentual:</strong> <span id="standardPercentage"></span>%</p>
+            <p><strong>Conceito Numérico (0-10):</strong> <span id="standardNumericGrade"></span></p>
+            <p><strong>Conceito Final:</strong> <span id="standardFinalGrade"></span></p>
+            <p class="note-message" id="standardNote" style="display:none;"></p>
+        </div>
+    </div>
+
+    <script>
+        const MAX_RAW_SCORE_CHALLENGE = 42; // Assumed score for top Conceito (10)
+        const MAX_RAW_SCORE_STANDARD = 24;  // Assumed score for top Conceito (10)
+        const TOP_NUMERIC_CONCEITO = 10;
+
+        function getFinalGradeAndNote(numericConceito) {
+            // Corresponds to =IF(B10>=10,"A+",if(B10>8.5,"A",if(B10>7.5,"B+",if(B10>7,"B",if(B10<7,"ABAIXO DE B. CHECAR INDIVIDUALMENTE")))))
+            // Note: The original Excel formula has a gap if B10 is exactly 7. 
+            // This implementation assumes scores <= 7 fall into the "ABAIXO DE B" category.
+            if (numericConceito >= TOP_NUMERIC_CONCEITO) return { finalGrade: 'A+', needsCheck: false };
+            if (numericConceito > 8.5) return { finalGrade: 'A', needsCheck: false };
+            if (numericConceito > 7.5) return { finalGrade: 'B+', needsCheck: false };
+            if (numericConceito > 7.0) return { finalGrade: 'B', needsCheck: false };
+            // If numericConceito is <= 7.0 (including exactly 7)
+            return { finalGrade: 'ABAIXO DE B. CHECAR INDIVIDUALMENTE', needsCheck: true }; 
+        }
+
+        function calculateGrade(testType) {
+            let rawScore, maxRawScoreForTop, resultsDivId, inputScoreId, percentageId, numericGradeId, finalGradeId, noteId;
+
+            if (testType === 'challenge') {
+                rawScore = parseFloat(document.getElementById('challengeScore').value);
+                maxRawScoreForTop = MAX_RAW_SCORE_CHALLENGE;
+                resultsDivId = 'challengeResults';
+                inputScoreId = 'challengeInputScore';
+                percentageId = 'challengePercentage';
+                numericGradeId = 'challengeNumericGrade';
+                finalGradeId = 'challengeFinalGrade'; // Changed from letterGradeId
+                noteId = 'challengeNote';
+            } else { // standard
+                rawScore = parseFloat(document.getElementById('standardScore').value);
+                maxRawScoreForTop = MAX_RAW_SCORE_STANDARD;
+                resultsDivId = 'standardResults';
+                inputScoreId = 'standardInputScore';
+                percentageId = 'standardPercentage';
+                numericGradeId = 'standardNumericGrade';
+                finalGradeId = 'standardFinalGrade'; // Changed from letterGradeId
+                noteId = 'standardNote';
+            }
+
+            const resultsDiv = document.getElementById(resultsDivId);
+            if (isNaN(rawScore) || rawScore < 0) {
+                alert("Por favor, insira uma pontuação válida (número positivo).");
+                resultsDiv.style.display = 'none';
+                return;
+            }
+            
+            let percentage = (rawScore / maxRawScoreForTop) * 100;
+            percentage = Math.max(0, percentage); // Allow percentage to go over 100 if score is higher
+
+            let numericConceito = (rawScore / maxRawScoreForTop) * TOP_NUMERIC_CONCEITO;
+            numericConceito = Math.max(0, Math.min(numericConceito, TOP_NUMERIC_CONCEITO)); // Clamp numericConceito between 0 and 10
+
+            const gradeInfo = getFinalGradeAndNote(numericConceito);
+
+            document.getElementById(inputScoreId).textContent = rawScore;
+            document.getElementById(percentageId).textContent = percentage.toFixed(2);
+            document.getElementById(numericGradeId).textContent = numericConceito.toFixed(2);
+            document.getElementById(finalGradeId).textContent = gradeInfo.finalGrade;
+
+            const noteElement = document.getElementById(noteId);
+            // The "ABAIXO DE B..." message is now the grade itself if needsCheck is true.
+            // So, the separate note element might only be needed if we want to *additionally* highlight something.
+            // For now, if gradeInfo.finalGrade contains the message, it's already displayed.
+            // If gradeInfo.needsCheck is true, the finalGrade *is* the message.
+            if (gradeInfo.needsCheck) {
+                 // The message is already in finalGrade. We could hide the note element or use it for something else.
+                 // For consistency with previous design, let's make sure it's clear.
+                noteElement.textContent = "Atenção: " + gradeInfo.finalGrade; // Or just hide it if finalGrade is the message
+                noteElement.style.display = 'block'; // Ensure it's shown
+            } else {
+                noteElement.style.display = 'none';
+            }
+
+            resultsDiv.style.display = 'block';
+        }
+    </script>
+
+</body>
+</html>
